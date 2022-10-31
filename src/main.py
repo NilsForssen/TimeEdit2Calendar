@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import requests
 from bs4 import BeautifulSoup
 import datetime
@@ -19,7 +21,7 @@ class event:
     description: str
     start: datetime.datetime
     end: datetime.datetime
-    t_offset: str = "+02:00"
+    t_offset: str = "+01:00"
 
     def get_gc_event(self):
         event = {
@@ -69,25 +71,28 @@ for row in rows[2:]:
         match = re.search(r"\d{4}-\d{2}-\d{2}", date.text.strip())
         active_day = match.group()
     else:
-        time = row.find("td", attrs={"class": "time tt c-1"})
-        if time is not None:
-            info = [
-                col.text.strip()
-                for col in row.find_all("td")
-                if "columnLine" in col["class"]
-            ]
-            summary = f"{info[0]} - {info[1]}, {info[2]}"
-            description = f"{info[0]}, {info[1]}, {info[2]}, {info[3]}, {info[5]}, {info[5]}\nautogen_nils"
-            active_time = time.text.strip()
-            start = datetime.datetime.strptime(
-                active_day + active_time[:5], "%Y-%m-%d%H:%M"
-            )
-            end = datetime.datetime.strptime(
-                active_day + active_time[8:], "%Y-%m-%d%H:%M"
-            )
-            schedule.append(event(summary, description, start, end))
+        try:
+            time = row.find("td", attrs={"class": "time tt c-1"})
+            if time is not None:
+                info = [
+                    col.text.strip()
+                    for col in row.find_all("td")
+                    if "columnLine" in col["class"]
+                ]
+                summary = f"{info[0]} - {info[1]}, {info[2]}"
+                description = f"{info[0]}, {info[1]}, {info[2]}, {info[3]}, {info[5]}, {info[5]}\nautogen_nils\nCreated: {datetime.datetime.now()}"
+                active_time = time.text.strip()
+                start = datetime.datetime.strptime(
+                    active_day + active_time[:5], "%Y-%m-%d%H:%M"
+                )
+                end = datetime.datetime.strptime(
+                    active_day + active_time[8:], "%Y-%m-%d%H:%M"
+                )
+                schedule.append(event(summary, description, start, end))
+        except Exception as e:
+            print(e)
         else:
-            raise ValueError(f"strange row: {row.content}")
+            print(f"strange row: {row.content}")
 
 for c_event in googleCalendar.listEvents(
     **{
